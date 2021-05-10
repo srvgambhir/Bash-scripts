@@ -1,0 +1,54 @@
+#!/bin/bash
+  
+usage() {
+        echo "Usage: ${0} suite-file program" 1>&2
+        exit 1
+}
+
+no_out() {
+	echo "Error: missing or unreadable .out file" 1>&2
+	exit 2
+}
+
+if [ ${#} -ne 2 ]; then
+        usage
+fi
+
+for words in $(cat ${1}); do
+	if [ -r "${words}.out" ]; then
+		temp_file=mktemp
+		if [ -e "${words}.args" ]; then
+			if [ -e "${words}.in" ]; then
+                		${2} $(cat "${words}.args") < "${words}.in" > "${temp_file}"
+			else
+				${2} $(cat "${words}.args") > "${temp_file}"
+			fi
+        	else
+			if [ -e "${words}.in" ]; then
+                                ${2} < "${words}.in" > "${temp_file}"
+                        else
+                                ${2} > "${temp_file}"
+                        fi
+        	fi
+		diff "${words}.out" "${temp_file}" > /dev/null
+		status=${?}
+		if [ ${status} -ne 0 ]; then
+			echo "Test failed: ${words}"
+			echo "Args:"
+			if [ -e "${words}.args" ]; then
+				cat "${words}.args"
+			fi
+			echo "Input:"
+			if [ -e "${words}.in" ]; then	
+				cat "${words}.in"
+			fi
+			echo "Expected:"
+			cat "${words}.out"
+			echo "Actual:"
+			cat "${temp_file}"
+		fi
+		rm "${temp_file}"
+	else
+		no_out
+	fi
+done

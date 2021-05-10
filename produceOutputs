@@ -1,0 +1,26 @@
+#!/bin/bash
+
+usage() {
+	echo "Usage: ${0} suite-file program" 1>&2
+	exit 1
+}
+
+if [ ${#} -ne 2 ]; then
+	usage
+fi
+
+for words in $(cat ${1}); do
+	if [ -e "${words}.args" ]; then
+		if [ -e "${words}.in" ]; then
+			${2} $(cat "${words}.args") < "${words}.in" > "${words}.out"
+		else
+			${2} $(cat "${words}.args") > "${words}.out"
+		fi
+	else
+		if [ -e "${words}.in" ]; then
+                        ${2} < "${words}.in" > "${words}.out"
+                else
+			${2} > "${words}.out"
+		fi
+	fi	
+done
